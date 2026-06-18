@@ -270,6 +270,7 @@ Future Improvements
 * Centralized logging
 * Monitoring with Prometheus and Grafana
 * Redis caching
+* Deploy services in a private network and expose only the API Gateway
 
 ⸻
 
