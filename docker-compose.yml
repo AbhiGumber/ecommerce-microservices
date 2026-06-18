@@ -12,6 +12,12 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   config-server:
     build: ./config-server
@@ -19,7 +25,14 @@ services:
     ports:
       - "8888:8888"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8888/order-service/default"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
   discovery-server:
     build: ./discovery-server
@@ -27,7 +40,8 @@ services:
     ports:
       - "8761:8761"
     depends_on:
-      - config-server
+      config-server:
+        condition: service_healthy
 
   product-service:
     build: ./product-service
@@ -35,9 +49,12 @@ services:
     ports:
       - "8081:8081"
     depends_on:
-      - postgres
-      - config-server
-      - discovery-server
+      postgres:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_started
 
   order-service:
     build: ./order-service
@@ -45,11 +62,16 @@ services:
     ports:
       - "8082:8082"
     depends_on:
-      - postgres
-      - config-server
-      - discovery-server
-      - product-service
-      - notification-service
+      postgres:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_started
+      product-service:
+        condition: service_started
+      notification-service:
+        condition: service_started
 
   notification-service:
     build: ./notification-service
@@ -57,8 +79,10 @@ services:
     ports:
       - "8083:8083"
     depends_on:
-      - config-server
-      - discovery-server
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_started
 
   gateway-service:
     build: ./gateway-service
@@ -66,11 +90,16 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      - config-server
-      - discovery-server
-      - product-service
-      - order-service
-      - notification-service
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_started
+      product-service:
+        condition: service_started
+      order-service:
+        condition: service_started
+      notification-service:
+        condition: service_started
 
 volumes:
   postgres_data:

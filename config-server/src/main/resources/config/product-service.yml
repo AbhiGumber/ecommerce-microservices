@@ -6,6 +6,9 @@ spring:
     url: jdbc:postgresql://ecommerce-postgres:5432/product_db
     username: postgres
     password: postgres
+  jpa:
+    hibernate:
+      ddl-auto: update
 
 eureka:
   client:
