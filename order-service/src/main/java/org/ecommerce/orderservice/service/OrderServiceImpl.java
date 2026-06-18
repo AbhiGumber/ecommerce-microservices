@@ -1,5 +1,6 @@
 package org.ecommerce.orderservice.service;
 
+import feign.FeignException;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 import org.ecommerce.orderservice.dao.OrdersRepository;
@@ -8,6 +9,7 @@ import org.ecommerce.orderservice.dto.OrderResponse;
 import org.ecommerce.orderservice.entity.Order;
 import org.ecommerce.orderservice.exception.InsufficientStockException;
 import org.ecommerce.orderservice.exception.OrderNotFoundException;
+import org.ecommerce.orderservice.exception.ServiceUnavailableException;
 import org.ecommerce.orderservice.feigns.NotificationClient;
 import org.ecommerce.orderservice.feigns.NotificationRequest;
 import org.ecommerce.orderservice.feigns.ProductClient;
@@ -87,12 +89,12 @@ public class OrderServiceImpl implements OrderService {
                 order.getCreatedAt()
         );
     }
-    private OrderResponse productServiceFallback(
+    public OrderResponse productServiceFallback(
             CreateOrderRequest request,
             Exception ex) {
-
-        throw new RuntimeException(
-                "Product Service is currently unavailable "+request.productId()+" "+ex
-        );
+        if (ex instanceof FeignException.NotFound notFound) {
+            throw notFound;
+        }
+        throw new ServiceUnavailableException("Product Service is currently unavailable");
     }
 }

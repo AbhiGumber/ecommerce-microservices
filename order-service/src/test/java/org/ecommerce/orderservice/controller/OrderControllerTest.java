@@ -111,6 +111,6 @@ public class OrderControllerTest {
                                 )
                                 .content(objectMapper.writeValueAsString(request))
                 )
-                .andExpect(status().isInternalServerError());
+                .andExpect(status().isBadRequest());
     }
 }
